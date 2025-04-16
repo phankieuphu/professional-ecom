@@ -20,7 +20,6 @@ func GetDb() *gorm.DB {
 		func() {
 			dbConfig := config.LoadDBConfig()
 			dsn := dbConfig.DSN()
-
 			conn, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 			if err != nil {
 				log.Fatalf("failed to connect to DB: %v", err)
@@ -43,5 +42,3 @@ func GetDb() *gorm.DB {
 	return dbInstance
 
 }
-
-func getEnv() {}

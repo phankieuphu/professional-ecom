@@ -37,6 +37,6 @@ func getEnv(key, defaultVal string) string {
 func (db Database) DSN() string {
 	return fmt.Sprintf(
 		"%s:%s@tcp(%s:%s)/%s?parseTime=true",
-		"your_user", db.DBPassword, db.DBHost, db.DBPort, db.DBName,
+		db.DBUser, db.DBPassword, db.DBHost, db.DBPort, db.DBName,
 	)
 }
