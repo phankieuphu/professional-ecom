@@ -30,11 +30,11 @@ func RegisterUser(c *gin.Context) {
 
 	user := &models.User{
 		ID:          uuid.New(),
-		Email:       "phankieuphu@gmail.com",
+		Email:       "",
 		Password:    "phankieuphu",
 		Username:    "phankieuphu",
-		Address:     "661  Tran Hung Dao street",
-		PhoneNumber: "0799992551",
+		Address:     "",
+		PhoneNumber: "",
 	}
 
 	wg.Add(1)
@@ -85,7 +85,7 @@ func sendEmail(ctx context.Context, u *models.User) error {
 		select {
 		case <-time.After(7 * time.Second):
 			// time.Sleep(5 * time.Second)
-			if u.Email != "phankieuphu@gmail.com" {
+			if u.Email != "" {
 				fmt.Println("Not correct user")
 				return errors.New("not correct user")
 			}
