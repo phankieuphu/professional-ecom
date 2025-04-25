@@ -1,7 +1,6 @@
-package database
+package config
 
 import (
-	"gateway/config"
 	"log"
 	"sync"
 	"time"
@@ -18,7 +17,7 @@ var (
 func GetDb() *gorm.DB {
 	once.Do(
 		func() {
-			dbConfig := config.LoadDBConfig()
+			dbConfig := LoadDBConfig()
 			dsn := dbConfig.DSN()
 			conn, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 			if err != nil {
