@@ -3,6 +3,9 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
+
+	"github.com/go-redis/redis/v8"
 )
 
 type EnvConfig struct {
@@ -14,6 +17,14 @@ type Database struct {
 	DBPort     string
 	DBPassword string
 	DBUser     string
+}
+
+func LoadRedisConfig() *redis.Options {
+	return &redis.Options{
+		Addr:     getEnv("REDIS_HOST", "localhost:6379"),
+		Password: getEnv("REDIS_PASSWORD", ""),
+		DB:       getEnvInt("REDIS_DB", 0),
+	}
 }
 
 func LoadDBConfig() *Database {
@@ -30,6 +41,14 @@ func LoadDBConfig() *Database {
 func getEnv(key, defaultVal string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
+	}
+	return defaultVal
+}
+func getEnvInt(key string, defaultVal int) int {
+	if value := os.Getenv(key); value != "" {
+		if intVal, err := strconv.Atoi(value); err == nil {
+			return intVal
+		}
 	}
 	return defaultVal
 }

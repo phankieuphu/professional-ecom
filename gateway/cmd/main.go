@@ -1,9 +1,8 @@
 package main
 
 import (
-	"gateway/database"
 	"gateway/routers"
-
+	"gateway/config"
 	"github.com/joho/godotenv"
 )
 
@@ -15,7 +14,7 @@ func main() {
 	}
 	// Setup the router
 	r := routers.SetupRouters()
-	database.GetDb()
+	config.GetDb()
 
 	// Start the server
 	r.Run(":8080")

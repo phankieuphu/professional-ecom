@@ -2,13 +2,13 @@ package services
 
 import (
 	"fmt"
-	"gateway/database"
+	"gateway/config"
 
 	"github.com/gin-gonic/gin"
 )
 
 func InitOrder(c *gin.Context) {
-	dbInstance := database.GetDb()
+	dbInstance := config.GetDb()
 	user := dbInstance.Table("user").Select("")
 	fmt.Println(user)
 	c.JSON(200, gin.H{
