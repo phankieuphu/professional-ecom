@@ -5,6 +5,7 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/go-redis/redis/v8"
 )
 
@@ -25,6 +26,18 @@ func LoadRedisConfig() *redis.Options {
 		Password: getEnv("REDIS_PASSWORD", ""),
 		DB:       getEnvInt("REDIS_DB", 0),
 	}
+}
+
+func LoadKafkaConsumerConfig() *kafka.ConfigMap {
+	return &kafka.ConfigMap{
+		"bootstrap.servers": "localhost:9092",
+		"group.id":          "your-group",
+		"auto.offset.reset": "earliest",
+	}
+}
+
+func LoadListKafkaConsumerTopic() []string {
+	return []string{"default-topic"}
 }
 
 func LoadDBConfig() *Database {
