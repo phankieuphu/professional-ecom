@@ -1,8 +1,11 @@
 package main
 
 import (
-	"gateway/routers"
 	"gateway/config"
+	"gateway/middleware"
+	"gateway/routers"
+	"gateway/services"
+
 	"github.com/joho/godotenv"
 )
 
@@ -14,6 +17,9 @@ func main() {
 	}
 	// Setup the router
 	r := routers.SetupRouters()
+
+	r.Use(middleware.LoggerMiddleware())
+	services.KafkaConsumer()
 	config.GetDb()
 
 	// Start the server
