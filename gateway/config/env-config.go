@@ -30,14 +30,21 @@ func LoadRedisConfig() *redis.Options {
 
 func LoadKafkaConsumerConfig() *kafka.ConfigMap {
 	return &kafka.ConfigMap{
-		"bootstrap.servers": "localhost:9092",
-		"group.id":          "your-group",
+		"bootstrap.servers": GetKafkaBrokers(),
+		"group.id":          GetKafkaGroup(),
 		"auto.offset.reset": "earliest",
 	}
 }
+func GetKafkaBrokers() string {
+	return "localhost:9092"
+}
+
+func GetKafkaGroup() string {
+	return "gateway_group"
+}
 
 func LoadListKafkaConsumerTopic() []string {
-	return []string{"default-topic"}
+	return []string{"gateway"}
 }
 
 func LoadDBConfig() *Database {

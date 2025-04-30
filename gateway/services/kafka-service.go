@@ -31,7 +31,7 @@ func KafkaConsumer() {
 	}
 }
 
-func NewKafkaProducer(brokers string) (*KafkaProducer, error) {
+func NewKafkaProducer(brokers string) (*kafka.Producer, error) {
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers": brokers,
 	})
@@ -39,7 +39,8 @@ func NewKafkaProducer(brokers string) (*KafkaProducer, error) {
 		return nil, err
 	}
 
-	return &KafkaProducer{
-		producer: p,
-	}, nil
+	return p, nil
+	// return &KafkaProducer{
+	// 	producer: p,
+	// }, nil
 }

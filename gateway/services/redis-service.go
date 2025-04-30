@@ -15,11 +15,14 @@ type RedisClient struct {
 
 var redisClient *redis.Client
 
-func (c RedisClient) Client() *redis.Client {
+func GetRDBClient() *RedisClient {
 	if redisClient == nil {
 		redisClient = redis.NewClient(config.LoadRedisConfig())
 	}
-	return redisClient
+	return &RedisClient{
+		rdb: redisClient,
+		ctx: context.Background(),
+	}
 }
 
 func (c RedisClient) Get(key string) (string, error) {

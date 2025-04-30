@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"gateway/config"
 	"gateway/middleware"
 	"gateway/routers"
@@ -19,9 +20,9 @@ func main() {
 	r := routers.SetupRouters()
 
 	r.Use(middleware.LoggerMiddleware())
-	services.KafkaConsumer()
+	go services.KafkaConsumer()
 	config.GetDb()
-
+	fmt.Println("Server running on port ", 8080)
 	// Start the server
 	r.Run(":8080")
 }
