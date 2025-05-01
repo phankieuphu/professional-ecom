@@ -4,6 +4,9 @@
 
 This repository contains a professional e-commerce solution built with modern web technologies. The project features a complete online shopping platform with both customer-facing and administrative interfaces.
 
+# High Level Architecture Design
+![High Architecture](./docs/saga-architecture.png)
+
 ## Features
 
 ### Customer Facing
