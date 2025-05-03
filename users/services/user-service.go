@@ -9,9 +9,12 @@ import (
 	"sync"
 	"time"
 	"users/config"
+	"users/logger"
 	"users/models"
 
+	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type RegisterRequest struct {
@@ -29,7 +32,7 @@ func RegisterUser(c *gin.Context) {
 	// if err := c.ShouldBindJSON(&models.User); err != nil {
 	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	// }
-
+	// hash user password with bcrypt
 	user := &models.User{
 		Email:       req.Email,
 		Password:    req.Password,
@@ -95,14 +98,16 @@ func RegisterUser(c *gin.Context) {
 }
 
 func sendEmail(ctx context.Context, u *models.User) error {
+	logger := logger.NewConsoleLogger()
+
 	for {
 		select {
 		case <-time.After(5 * time.Second):
 			// time.Sleep(5 * time.Second)
 			if u.Email != "" {
-				fmt.Println("Not correct user")
-				return errors.New("not correct user")
+				logger.Info("email service", "user", u)
 			}
+			logger.Info("Send email to user success", "user", u)
 			return nil
 		case <-ctx.Done():
 			return fmt.Errorf("email sending canceled: %v", ctx.Err())
@@ -110,7 +115,8 @@ func sendEmail(ctx context.Context, u *models.User) error {
 	}
 }
 func writeToLogService(u *models.User) error {
-	fmt.Println("write log to service")
+	logger := logger.NewConsoleLogger()
+	logger.Info("log service", "user", u)
 	return nil
 }
 
@@ -126,4 +132,49 @@ func cacheUser(ctx context.Context, u *models.User) error {
 
 		}
 	}
+}
+
+func GetUserProfile(c *gin.Context) {
+	logger := logger.NewConsoleLogger()
+	// who is view profile
+	// get request user
+	username, isOk := c.Params.Get("username")
+	if !isOk {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Invalid params",
+		})
+	}
+	database := config.GetDb()
+
+	var user models.User
+	if err := database.Where("username = ?", username).First(&user).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "User not found",
+			})
+			return
+		}
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+	// send notification to user
+	topic := "ProfileViewedEvent"
+	kafkaProducer, err := NewKafkaProducer(config.GetKafkaBrokers())
+	if err != nil {
+
+	}
+	message := &kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+		Value:          []byte(fmt.Sprintf("User %s viewed profile of %s", username, user.Username)),
+	}
+
+	if err = kafkaProducer.Produce(message, nil); err != nil {
+		logger.Error("Send message to kafka failed", user)
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"user": user,
+	})
 }
