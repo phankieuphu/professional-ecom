@@ -8,10 +8,10 @@ import (
 	"net/http"
 	"sync"
 	"time"
+	"users/config"
 	"users/models"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 type RegisterRequest struct {
@@ -19,24 +19,38 @@ type RegisterRequest struct {
 }
 
 func RegisterUser(c *gin.Context) {
+	var req models.UserRegisterValidate
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 	errChan := make(chan error, 5)
 	var wg sync.WaitGroup
 	// if err := c.ShouldBindJSON(&models.User); err != nil {
 	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	// }
 
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 6*time.Second)
-	defer cancel()
-
 	user := &models.User{
-		ID:          uuid.New(),
-		Email:       "",
-		Password:    "phankieuphu",
-		Username:    "phankieuphu",
-		Address:     "",
-		PhoneNumber: "",
+		Email:       req.Email,
+		Password:    req.Password,
+		Username:    req.Username,
+		Address:     req.Address,
+		PhoneNumber: req.PhoneNumber,
+		DisplayName: req.DisplayName,
 	}
 
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 6*time.Second)
+	defer cancel()
+	database := config.GetDb()
+
+	userSaved := database.Save(user)
+	fmt.Println("userSaved", userSaved)
+	if userSaved.Error != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": userSaved.Error.Error(),
+		})
+		return
+	}
 	wg.Add(1)
 	go func() {
 		defer wg.Done()
@@ -83,7 +97,7 @@ func RegisterUser(c *gin.Context) {
 func sendEmail(ctx context.Context, u *models.User) error {
 	for {
 		select {
-		case <-time.After(7 * time.Second):
+		case <-time.After(5 * time.Second):
 			// time.Sleep(5 * time.Second)
 			if u.Email != "" {
 				fmt.Println("Not correct user")
