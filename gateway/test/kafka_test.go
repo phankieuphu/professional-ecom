@@ -1,7 +1,7 @@
 package test
 
 import (
-	"gateway/services"
+	"gateway/internal/services"
 	"testing"
 )
 
