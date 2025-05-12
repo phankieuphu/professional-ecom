@@ -2,7 +2,6 @@ package services
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -11,6 +10,7 @@ import (
 
 	config "github.com/phankieuphu/ecom-user/configs"
 	userPb "github.com/phankieuphu/ecom-user/gen/user"
+	"github.com/phankieuphu/ecom-user/internal/logger"
 	"github.com/phankieuphu/ecom-user/internal/models"
 
 	"github.com/gin-gonic/gin"
@@ -31,7 +31,7 @@ func RegisterUser(c *gin.Context) {
 	// if err := c.ShouldBindJSON(&models.User); err != nil {
 	// 	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 	// }
-
+	// hash user password with bcrypt
 	user := &models.User{
 		Email:       req.Email,
 		Password:    req.Password,
@@ -97,14 +97,16 @@ func RegisterUser(c *gin.Context) {
 }
 
 func sendEmail(ctx context.Context, u *models.User) error {
+	logger := logger.NewConsoleLogger()
+
 	for {
 		select {
 		case <-time.After(5 * time.Second):
 			// time.Sleep(5 * time.Second)
 			if u.Email != "" {
-				fmt.Println("Not correct user")
-				return errors.New("not correct user")
+				logger.Info("email service", "user", u)
 			}
+			logger.Info("Send email to user success", "user", u)
 			return nil
 		case <-ctx.Done():
 			return fmt.Errorf("email sending canceled: %v", ctx.Err())
@@ -112,7 +114,8 @@ func sendEmail(ctx context.Context, u *models.User) error {
 	}
 }
 func writeToLogService(u *models.User) error {
-	fmt.Println("write log to service")
+	logger := logger.NewConsoleLogger()
+	logger.Info("log service", "user", u)
 	return nil
 }
 
