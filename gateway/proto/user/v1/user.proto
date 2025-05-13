@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package services;
+
+option go_package = "/services;services";
+
+service User {
+  rpc GetProfileUser (GetProfileUserRequest) returns (GetProfileUserResponse);
+  rpc RegisterUser (RegisterUserRequest) returns (RegisterUserResponse);
+}
+
+message UserModels {
+  string Username = 1 [json_name="username"];
+  string Email = 2 [json_name="email"];
+  string  Address = 3 [json_name = "address"];
+  string PhoneNumber = 4 [json_name="phone_number"];
+  string Password = 5 [json_name="password"];
+//  string google.protobuf.StringValue DisplayName = 5 [json_name=""]
+}
+
+message GetProfileUserRequest {
+  string name = 1;
+}
+
+message GetProfileUserResponse {
+  string message = 1;
+}
+
+message RegisterUserRequest {
+  UserModels user = 1;
+}
+
+message RegisterUserResponse {
+  string ID  = 1; 
+  string Message = 2;
+}

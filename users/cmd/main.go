@@ -5,7 +5,7 @@ import (
 	"net"
 
 	config "github.com/phankieuphu/ecom-user/configs"
-	user "github.com/phankieuphu/ecom-user/gen/user"
+	user "github.com/phankieuphu/ecom-user/gen/user/v1"
 	"github.com/phankieuphu/ecom-user/internal/services"
 	"google.golang.org/grpc"
 
@@ -15,7 +15,7 @@ import (
 func main() {
 	err := godotenv.Load()
 	if err != nil {
-		log.Fatalf("Error load env", err)
+		log.Fatalf("Error load env %v", err)
 	}
 
 	config.GetDb()
