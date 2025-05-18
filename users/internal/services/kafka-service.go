@@ -32,7 +32,7 @@ func KafkaConsumer() {
 	}
 }
 
-func NewKafkaProducer(brokers string) (*kafka.Producer, error) {
+func NewKafkaProducer(brokers string) (*KafkaProducer, error) {
 	p, err := kafka.NewProducer(&kafka.ConfigMap{
 		"bootstrap.servers": brokers,
 	})
@@ -40,8 +40,33 @@ func NewKafkaProducer(brokers string) (*kafka.Producer, error) {
 		return nil, err
 	}
 
-	return p, nil
-	// return &KafkaProducer{
-	// 	producer: p,
-	// }, nil
+	return &KafkaProducer{
+		producer: p,
+	}, nil
+}
+
+func (k *KafkaProducer) ProduceMessage(topic string, message []byte) error {
+	if k.producer == nil {
+		return fmt.Errorf("kafka producer is not initialized")
+	}
+
+	deliveryChan := make(chan kafka.Event)
+
+	err := k.producer.Produce(&kafka.Message{
+		TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: kafka.PartitionAny},
+		Value:          message,
+	}, deliveryChan)
+
+	if err != nil {
+		return fmt.Errorf("failed to produce message: %v", err)
+	}
+
+	e := <-deliveryChan
+	m := e.(*kafka.Message)
+	if m.TopicPartition.Error != nil {
+		return fmt.Errorf("failed to deliver message: %v", m.TopicPartition.Error)
+	}
+
+	log.Printf("Message produced to topic %s\n", topic)
+	return nil
 }

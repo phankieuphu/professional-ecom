@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"strings"
@@ -10,6 +11,7 @@ import (
 
 	config "github.com/phankieuphu/ecom-user/configs"
 	userPb "github.com/phankieuphu/ecom-user/gen/user/v1"
+	user_constant "github.com/phankieuphu/ecom-user/internal/constant"
 	"github.com/phankieuphu/ecom-user/internal/logger"
 	"github.com/phankieuphu/ecom-user/internal/models"
 )
@@ -56,9 +58,62 @@ type UserService struct {
 }
 
 func (s *UserService) GetProfileUser(ctx context.Context, req *userPb.GetProfileUserRequest) (*userPb.GetProfileUserResponse, error) {
-	fmt.Println("req", req)
+	name := req.Name
+	if name == "" {
+		return &userPb.GetProfileUserResponse{
+			Status: &userPb.ResponseStatus{
+				Code:    user_constant.CodeMissingInformationError,
+				Message: user_constant.MessageMissingInformationError,
+			},
+			User: nil,
+		}, fmt.Errorf("missing username")
+	}
+
+	database := config.GetDb()
+
+	user := &models.User{}
+
+	if err := database.First(user, "username = ?", name).Error; err != nil {
+		return &userPb.GetProfileUserResponse{
+			Status: &userPb.ResponseStatus{
+				Code:    user_constant.CodeUserNotFoundError,
+				Message: user_constant.MessageUserNotFoundError,
+			},
+			User: nil,
+		}, fmt.Errorf("user not found: %w", err)
+	}
+	go func() {
+		kafka, err := NewKafkaProducer(config.GetKafkaBrokers())
+		if err == nil {
+			userCreate, err := json.Marshal(user)
+			if err == nil {
+				kafkaSendMessage := kafka.ProduceMessage(user_constant.KafkaTopicUserCreated, userCreate)
+				if kafkaSendMessage != nil {
+					fmt.Println("Error sending message to Kafka:", kafkaSendMessage)
+				} else {
+					fmt.Println("Message sent to Kafka successfully")
+				}
+			}
+		}
+
+		if err != nil {
+			fmt.Println("Error creating Kafka producer:", err)
+		}
+	}()
+
 	return &userPb.GetProfileUserResponse{
-		Message: "Hello " + req.GetName(),
+		Status: &userPb.ResponseStatus{
+			Code:    user_constant.CodeUserFetchedSuccess,
+			Message: user_constant.MessageUserFetchedSuccess,
+		},
+		User: &userPb.UserModels{
+			Id:          user.ID.String(),
+			Username:    user.Username,
+			Email:       user.Email,
+			Address:     user.Address,
+			PhoneNumber: user.PhoneNumber,
+			DisplayName: user.DisplayName,
+		},
 	}, nil
 }
 func (s *UserService) RegisterUser(ctx context.Context, req *userPb.RegisterUserRequest) (*userPb.RegisterUserResponse, error) {
@@ -133,5 +188,69 @@ func (s *UserService) RegisterUser(ctx context.Context, req *userPb.RegisterUser
 
 	}
 
-	return &userPb.RegisterUserResponse{ID: user.ID.String(), Message: "Success"}, nil
+	return &userPb.RegisterUserResponse{Id: user.ID.String(), Status: &userPb.ResponseStatus{
+		Code:    user_constant.CodeUserCreatedSuccess,
+		Message: user_constant.MessageUserCreatedSuccess,
+	}}, nil
+}
+
+func (s *UserService) UpdateUser(ctx context.Context, req *userPb.UpdateUserRequest) (*userPb.UpdateUserResponse, error) {
+	username := req.Username
+	if username == "" {
+		return &userPb.UpdateUserResponse{
+			Status: &userPb.ResponseStatus{
+				Code:    user_constant.CodeMissingInformationError,
+				Message: user_constant.MessageMissingInformationError,
+			},
+		}, fmt.Errorf("missing user username")
+	}
+	database := config.GetDb()
+	user := &models.User{}
+
+	var mu sync.Mutex // Mutex to handle race condition
+
+	mu.Lock()
+	defer mu.Unlock()
+
+	if err := database.First(user, "username = ?", username).Error; err != nil {
+		return &userPb.UpdateUserResponse{
+			Status: &userPb.ResponseStatus{
+				Code:    user_constant.CodeUserNotFoundError,
+				Message: user_constant.MessageUserNotFoundError,
+			},
+		}, fmt.Errorf("user not found: %v", err)
+	}
+
+	// Only update fields if they are provided (not nil)
+	updateFields := make(map[string]interface{})
+
+	if req.Address != nil && *req.Address != "" {
+		updateFields["address"] = *req.Address
+	}
+	if req.DisplayName != nil && *req.DisplayName != "" {
+		updateFields["display_name"] = *req.DisplayName
+	}
+	if req.Password != nil && *req.Password != "" {
+		updateFields["password"] = *req.Password
+	}
+
+	if len(updateFields) > 0 {
+		if err := database.Model(user).Where("username = ?", username).Updates(updateFields).Error; err != nil {
+			return &userPb.UpdateUserResponse{
+				Status: &userPb.ResponseStatus{
+					Code:    user_constant.CodeUserNotFoundError,
+					Message: "failed to update user",
+				},
+			}, fmt.Errorf("failed to update user: %v", err)
+		}
+	}
+
+	// delete cache user if exits
+
+	return &userPb.UpdateUserResponse{
+		Status: &userPb.ResponseStatus{
+			Code:    user_constant.CodeUserUpdatedSuccess,
+			Message: user_constant.MessageUserUpdatedSuccess,
+		},
+	}, nil
 }

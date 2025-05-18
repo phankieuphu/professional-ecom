@@ -21,6 +21,8 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	User_GetProfileUser_FullMethodName = "/services.User/GetProfileUser"
 	User_RegisterUser_FullMethodName   = "/services.User/RegisterUser"
+	User_UpdateUser_FullMethodName     = "/services.User/UpdateUser"
+	User_InactiveUser_FullMethodName   = "/services.User/InactiveUser"
 )
 
 // UserClient is the client API for User service.
@@ -29,6 +31,8 @@ const (
 type UserClient interface {
 	GetProfileUser(ctx context.Context, in *GetProfileUserRequest, opts ...grpc.CallOption) (*GetProfileUserResponse, error)
 	RegisterUser(ctx context.Context, in *RegisterUserRequest, opts ...grpc.CallOption) (*RegisterUserResponse, error)
+	UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UpdateUserResponse, error)
+	InactiveUser(ctx context.Context, in *InactiveUserRequest, opts ...grpc.CallOption) (*InactiveUserResponse, error)
 }
 
 type userClient struct {
@@ -59,12 +63,34 @@ func (c *userClient) RegisterUser(ctx context.Context, in *RegisterUserRequest, 
 	return out, nil
 }
 
+func (c *userClient) UpdateUser(ctx context.Context, in *UpdateUserRequest, opts ...grpc.CallOption) (*UpdateUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(UpdateUserResponse)
+	err := c.cc.Invoke(ctx, User_UpdateUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *userClient) InactiveUser(ctx context.Context, in *InactiveUserRequest, opts ...grpc.CallOption) (*InactiveUserResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(InactiveUserResponse)
+	err := c.cc.Invoke(ctx, User_InactiveUser_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // UserServer is the server API for User service.
 // All implementations must embed UnimplementedUserServer
 // for forward compatibility.
 type UserServer interface {
 	GetProfileUser(context.Context, *GetProfileUserRequest) (*GetProfileUserResponse, error)
 	RegisterUser(context.Context, *RegisterUserRequest) (*RegisterUserResponse, error)
+	UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserResponse, error)
+	InactiveUser(context.Context, *InactiveUserRequest) (*InactiveUserResponse, error)
 	mustEmbedUnimplementedUserServer()
 }
 
@@ -80,6 +106,12 @@ func (UnimplementedUserServer) GetProfileUser(context.Context, *GetProfileUserRe
 }
 func (UnimplementedUserServer) RegisterUser(context.Context, *RegisterUserRequest) (*RegisterUserResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method RegisterUser not implemented")
+}
+func (UnimplementedUserServer) UpdateUser(context.Context, *UpdateUserRequest) (*UpdateUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateUser not implemented")
+}
+func (UnimplementedUserServer) InactiveUser(context.Context, *InactiveUserRequest) (*InactiveUserResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method InactiveUser not implemented")
 }
 func (UnimplementedUserServer) mustEmbedUnimplementedUserServer() {}
 func (UnimplementedUserServer) testEmbeddedByValue()              {}
@@ -138,6 +170,42 @@ func _User_RegisterUser_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _User_UpdateUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServer).UpdateUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: User_UpdateUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServer).UpdateUser(ctx, req.(*UpdateUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _User_InactiveUser_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InactiveUserRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(UserServer).InactiveUser(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: User_InactiveUser_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(UserServer).InactiveUser(ctx, req.(*InactiveUserRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // User_ServiceDesc is the grpc.ServiceDesc for User service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +220,14 @@ var User_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "RegisterUser",
 			Handler:    _User_RegisterUser_Handler,
+		},
+		{
+			MethodName: "UpdateUser",
+			Handler:    _User_UpdateUser_Handler,
+		},
+		{
+			MethodName: "InactiveUser",
+			Handler:    _User_InactiveUser_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

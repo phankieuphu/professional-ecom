@@ -11,7 +11,7 @@ func UserRegister(r *gin.Engine) {
 	{
 		group.GET("/info/:username", services.GetUser)
 		group.POST("/register", services.RegisterUser)
-
+		group.PATCH("/update/:username", services.UpdateUser)
 	}
 
 }

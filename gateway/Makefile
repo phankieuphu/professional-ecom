@@ -1,6 +1,6 @@
 # Makefile for building and running a Go application
 
-APP_NAME := user-service
+APP_NAME := gateway-service
 CMD_PATH := ./cmd
 PROTO_DIR=proto
 

@@ -40,7 +40,7 @@ func GetKafkaBrokers() string {
 }
 
 func GetKafkaGroup() string {
-	return "gateway_group"
+	return "user_service_group"
 }
 
 func LoadListKafkaConsumerTopic() []string {

@@ -27,11 +27,15 @@ func GetUser(c *gin.Context) {
 
 	res, err := grpcClient.GetProfileUser(ctx, &userv1.GetProfileUserRequest{Name: c.Param("username")})
 	if err != nil {
-		log.Fatalf("error calling FetchUser: %v", err)
+		log.Println("Error calling GetProfileUser:", err)
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Failed to get user profile",
+		})
+		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"user": res,
+		"user": res.User,
 	})
 	// rdbClient := GetRDBClient()
 	// user, err := rdbClient.Get(username)
@@ -114,7 +118,49 @@ func RegisterUser(c *gin.Context) {
 		})
 	}
 	c.JSON(http.StatusCreated, gin.H{
-		"message": registerUser.Message,
+		"message": registerUser.Status.Message,
 	})
-	return
+}
+
+type UpdateUserRequest struct {
+	Password    string `json:"password"`
+	Address     string `json:"address"`
+	DisplayName string `json:"display_name"`
+}
+
+func UpdateUser(c *gin.Context) {
+	var user UpdateUserRequest
+	username := c.Param("username")
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User ID is required"})
+		return
+	}
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	}
+	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
+	if err != nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": err.Error()})
+		return
+	}
+
+	gRPCClient := userv1.NewUserClient(conn)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	updateUser, err := gRPCClient.UpdateUser(ctx, &userv1.UpdateUserRequest{
+
+		Password:    &user.Password,
+		Address:     &user.Address,
+		DisplayName: &user.DisplayName,
+		Username:    username,
+	})
+	if err != nil {
+		c.JSON(http.StatusBadGateway, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"message": updateUser.Status.Message,
+		"user":    updateUser.User})
 }
