@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -17,9 +18,14 @@ var (
 func GetDb() *gorm.DB {
 	once.Do(
 		func() {
-			dbConfig := LoadDBConfig()
-			dsn := dbConfig.DSN()
-			conn, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+			// when using docker, the database url is set in the env variable
+			dsn := getEnv("DATABASE_URL", "")
+			fmt.Println("Using DSN:", dsn)
+			if dsn == "" {
+				dbConfig := LoadDBConfig()
+				dsn = dbConfig.DSN()
+			}
+			conn, err := gorm.Open(mysql.Open("app_user:app_pass@tcp(database:3306)/user_service?charset=utf8mb4&parseTime=True&loc=Local"), &gorm.Config{})
 			if err != nil {
 				log.Fatalf("failed to connect to DB: %v", err)
 			}
